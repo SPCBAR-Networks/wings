@@ -1,41 +1,64 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	"net"
 	"os"
+	"strconv"
 )
 
 func printTitle() {
-	log.Println("+ ------------------------------------ +")
-	log.Println("|  Running Pterodactyl Daemon Canary   |")
-	log.Println("|  Copyright 2015 - 2017 Dane Everitt  |")
-	log.Println("+ ------------------------------------ +")
-	log.Println("Loading modules, this could take a few seconds.")
+	log.Info("+ ------------------------------------ +")
+	log.Info("|  Running Pterodactyl Daemon " + version + "   |")
+	log.Info("|  Copyright 2015 - 2017 Dane Everitt  |")
+	log.Info("+ ------------------------------------ +")
+	log.Info("Loading modules, this could take a few seconds.")
 }
 
-func storageCheck() {
+func checkStorage() {
 	cinfo, err := os.Stat("./config")
 	if err != nil {
-		fmt.Println("Missing config directories generating now")
+		log.Errorln("Missing config directory generating now")
 		os.Mkdir("./config", os.ModeDir)
 		return
 	}
-	fmt.Println("Server config directories in place:", cinfo.IsDir())
+	log.Info("Server config directories in place:", cinfo.IsDir())
 
 	linfo, err := os.Stat("./logs")
 	if err != nil {
-		fmt.Println("Missing log directory generating now")
+		log.Error("Missing log directory generating now")
 		os.Mkdir("./logs", os.ModeDir)
 		return
 	}
-	fmt.Println("Log directory in place:", linfo.IsDir())
+	log.Info("Log directory in place:", linfo.IsDir())
 
 	pinfo, err := os.Stat("./packs")
 	if err != nil {
-		fmt.Println("Missing pack directories generating now")
+		log.Error("Missing pack directories generating now")
 		os.Mkdir("./packs", os.ModeDir)
 		return
 	}
-	fmt.Println("Server pack directory in place:", pinfo.IsDir())
+	log.Info("Server pack directory in place:", pinfo.IsDir())
+}
+
+// Check if a port is available
+func checkPort() (status bool, err error) {
+
+	// Concatenate a colon and the port
+	host := ":" + strconv.Itoa(getDaemonConfig("web_port"))
+
+	// Try to create a server with the port
+	server, err := net.Listen("tcp", host)
+
+	// if it fails then the port is likely taken
+	if err != nil {
+		return false, err
+	}
+
+	// close the server
+	server.Close()
+
+	// we successfully used and closed the port
+	// so it's now available to be used again
+	return true, nil
+
 }
