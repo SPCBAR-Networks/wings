@@ -44,7 +44,7 @@ func checkStorage() {
 func checkPort() (status bool, err error) {
 
 	// Concatenate a colon and the port
-	host := ":" + strconv.Itoa(getDaemonConfig("web_port"))
+	host := ":" + strconv.Itoa(5)
 
 	// Try to create a server with the port
 	server, err := net.Listen("tcp", host)
