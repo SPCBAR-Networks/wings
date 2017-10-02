@@ -22,6 +22,7 @@ import:
   - client
 - package: github.com/fsouza/go-dockerclient
 - package: github.com/hashicorp/go-cleanhttp
+- package: gopkg.in/yaml.v2
 testImport:
 - package: github.com/stretchr/testify
   version: ~1.1.4

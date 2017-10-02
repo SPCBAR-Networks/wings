@@ -3,9 +3,7 @@ package constants
 import "os"
 
 // Version is the current wings version.
-const Version = "0.0.1-alpha"
-
-/* ---------- PATHS ---------- */
+const Version = "0.0.0-canary"
 
 // DefaultFilePerms are the file perms used for created files.
 const DefaultFilePerms os.FileMode = 0644
@@ -14,15 +12,11 @@ const DefaultFilePerms os.FileMode = 0644
 const DefaultFolderPerms os.FileMode = 0744
 
 // ServersPath is the path of the servers within the configured DataPath.
-const ServersPath = "servers"
+const ServersPath string = "servers"
 
 // ServerConfigFile is the filename of the server config file.
-const ServerConfigFile = "server.json"
+const ServerConfigFile string = "server.yaml"
 
-// ServerDataPath is the path of the data of a single server.
-const ServerDataPath = "data"
-
-/* ---------- MISC ---------- */
-
-// JSONIndent is the indent to use with the json.MarshalIndent() function.
-const JSONIndent = "  "
+// ServerDataFolder is the name of the folder containing all of the server
+// files for a given server.
+const ServerDataFolder string = "data"

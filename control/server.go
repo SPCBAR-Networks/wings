@@ -1,7 +1,6 @@
 package control
 
 import (
-	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"os"
@@ -12,6 +11,8 @@ import (
 	"github.com/Pterodactyl/wings/constants"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v2"
+	"unicode"
 )
 
 // ErrServerExists is returned when a server already exists on creation.
@@ -42,54 +43,54 @@ type Server interface {
 // ServerStruct is a single instance of a Service managed by the panel
 type ServerStruct struct {
 	// ID is the unique identifier of the server
-	ID string `json:"uuid"`
+	ID string `yaml:"uuid"`
 
 	// ServiceName is the name of the service. It is mainly used to allow storing the service
 	// in the config
-	ServiceName string `json:"serviceName"`
+	ServiceName string `yaml:"serviceName"`
 	service     *Service
 	environment Environment
 
 	// StartupCommand is the command executed in the environment to start the server
-	StartupCommand string `json:"startupCommand"`
+	StartupCommand string `yaml:"startupCommand"`
 
 	// DockerContainer holds information regarding the docker container when the server
 	// is running in a docker environment
-	DockerContainer dockerContainer `json:"dockerContainer"`
+	DockerContainer Container `yaml:"dockerContainer"`
 
 	// EnvironmentVariables are set in the Environment the server is running in
-	EnvironmentVariables map[string]string `json:"env"`
+	EnvironmentVariables map[string]string `yaml:"env"`
 
 	// Allocations contains the ports and ip addresses assigned to the server
-	Allocations allocations `json:"allocation"`
+	Allocations Allocations `yaml:"allocation"`
 
 	// Settings are the environment settings and limitations for the server
-	Settings settings `json:"settings"`
+	Settings Settings `yaml:"settings"`
 
 	// Keys are some auth keys we will hopefully replace by something better.
-	Keys map[string][]string `json:"keys"`
+	Keys map[string][]string `yaml:"keys"`
 }
 
-type allocations struct {
-	Ports    []int16 `json:"ports"`
-	MainIP   string  `json:"ip"`
-	MainPort int16   `json:"port"`
+type Allocations struct {
+	Ports       []int16 `yaml:"ports"`
+	PrimaryIp   string  `yaml:"ip"`
+	PrimaryPort int16   `yaml:"port"`
 }
 
-type settings struct {
-	Memory int64  `json:"memory"`
-	Swap   int64  `json:"swap"`
-	IO     int64  `json:"io"`
-	CPU    int16  `json:"cpu"`
-	Disk   int64  `json:"disk"`
-	Image  string `json:"image"`
-	User   string `json:"user"`
-	UserID int16  `json:"userID"`
+type Settings struct {
+	Memory int64  `yaml:"memory"`
+	Swap   int64  `yaml:"swap"`
+	IO     int64  `yaml:"io"`
+	CPU    int16  `yaml:"cpu"`
+	Disk   int64  `yaml:"disk"`
+	Image  string `yaml:"image"`
+	User   string `yaml:"user"`
+	UserID int16  `yaml:"userID"`
 }
 
-type dockerContainer struct {
-	ID    string `json:"id"`
-	Image string `json:"image"`
+type Container struct {
+	ID    string `yaml:"id"`
+	Image string `yaml:"image"`
 }
 
 // ensure server implements Server
@@ -101,18 +102,20 @@ var servers = make(serversMap)
 
 // LoadServerConfigurations loads the configured servers from a specified path
 func LoadServerConfigurations(path string) error {
-	serverFiles, err := ioutil.ReadDir(path)
+	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		return err
 	}
-	servers = make(serversMap)
+	// Can this be removed? Isn't it set in the global scope for this package above?
+	// servers = make(serversMap)
 
-	for _, file := range serverFiles {
-		if file.IsDir() {
-			server, err := loadServerConfiguration(filepath.Join(path, file.Name(), constants.ServerConfigFile))
+	for _, f := range files {
+		if f.IsDir() {
+			server, err := LoadServerFromDisk(filepath.Join(path, f.Name(), constants.ServerConfigFile))
 			if err != nil {
 				return err
 			}
+
 			servers[server.ID] = server
 		}
 	}
@@ -120,50 +123,48 @@ func LoadServerConfigurations(path string) error {
 	return nil
 }
 
-func loadServerConfiguration(path string) (*ServerStruct, error) {
-	file, err := ioutil.ReadFile(path)
-
+func LoadServerFromDisk(path string) (*ServerStruct, error) {
+	f, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	server := &ServerStruct{}
-	if err := json.Unmarshal(file, server); err != nil {
+	s := &ServerStruct{}
+	if err := yaml.Unmarshal(f, s); err != nil {
 		return nil, err
 	}
-	return server, nil
+
+	return s, nil
 }
 
-func storeServerConfiguration(server *ServerStruct) error {
-	serverJSON, err := json.MarshalIndent(server, "", constants.JSONIndent)
+// Writes a server configuration to the disk in YAML format. This will use the defined
+// location from the configuration to save to.
+func WriteServerToDisk(server *ServerStruct) error {
+	y, err := yaml.Marshal(server)
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(server.path(), constants.DefaultFolderPerms); err != nil {
+
+	if err := os.MkdirAll(server.Path(), constants.DefaultFolderPerms); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(server.configFilePath(), serverJSON, constants.DefaultFilePerms); err != nil {
+
+	if err := ioutil.WriteFile(server.ConfigPath(), y, constants.DefaultFilePerms); err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func storeServerConfigurations() error {
+// Loops through all configured servers and saves their configuration to the disk
+// using the WriteServerToDisk function.
+func WriteConfigurationsToDisk() error {
 	for _, s := range servers {
-		if err := storeServerConfiguration(s); err != nil {
+		if err := WriteServerToDisk(s); err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func deleteServerFolder(id string) error {
-	path := filepath.Join(viper.GetString(config.DataPath), constants.ServersPath, id)
-	folder, err := os.Stat(path)
-	if os.IsNotExist(err) || !folder.IsDir() {
-		return err
-	}
-	return os.RemoveAll(path)
 }
 
 // GetServers returns an array of all servers the daemon manages
@@ -198,86 +199,131 @@ func CreateServer(server *ServerStruct) (Server, error) {
 	return server, nil
 }
 
-// DeleteServer deletes a server and all related files
-// NOTE: This is not reversible.
+// Delete a server and all associated files and pointers from Wings.
 func DeleteServer(id string) error {
-	if err := deleteServerFolder(id); err != nil {
-		log.WithField("server", id).WithError(err).Error("Failed to delete server.")
+	if err := DeleteServerData(id); err != nil {
+		log.WithField("server", id).WithError(err).Error("Failed to delete a server data directory.")
 	}
+
+	if err := DeleteServerConfig(id); err != nil {
+		log.WithField("server", id).WithError(err).Error("Failed to delete a server configuration directory.")
+	}
+
 	delete(servers, id)
 	return nil
 }
 
+// Deletes a server configuration file from Wings.
+// TODO: should these actually error if there is no directory? Can we not just move on?
+func DeleteServerConfig(id string) error {
+	p := filepath.Join(viper.GetString(config.DataPath), id)
+	f, err := os.Stat(p)
+	if os.IsNotExist(err) || !f.IsDir() {
+		return err
+	}
+
+	return os.RemoveAll(p)
+}
+
+// Delete the data folder for a specific server. This is a permanent
+// deletion and will remove all of the data stored (by default) in
+// /srv/wings/<server uuid> as well as the folder.
+func DeleteServerData(id string) error {
+	p := filepath.Join(viper.GetString(config.ServerDataPath), id)
+	f, err := os.Stat(p)
+	if os.IsNotExist(err) || !f.IsDir() {
+		return err
+	}
+
+	return os.RemoveAll(p)
+}
+
+// Start a new environment process for a server. If an environment
+// does not currently exist for the server a new one will be created.
 func (s *ServerStruct) Start() error {
-	env, err := s.Environment()
+	e, err := s.Environment()
 	if err != nil {
 		return err
 	}
-	if !env.Exists() {
-		if err := env.Create(); err != nil {
+
+	if !e.Exists() {
+		if err := e.Create(); err != nil {
 			return err
 		}
 	}
-	return env.Start()
+
+	return e.Start()
 }
 
+// Stop a running server environment.
 func (s *ServerStruct) Stop() error {
-	env, err := s.Environment()
+	e, err := s.Environment()
 	if err != nil {
 		return err
 	}
-	return env.Stop()
+
+	return e.Stop()
 }
 
+// Restart a running server environment.
 func (s *ServerStruct) Restart() error {
 	if err := s.Stop(); err != nil {
 		return err
 	}
+
 	return s.Start()
 }
 
+// Kill a running server environment.
 func (s *ServerStruct) Kill() error {
-	env, err := s.Environment()
+	e, err := s.Environment()
 	if err != nil {
 		return err
 	}
-	return env.Kill()
+
+	return e.Kill()
 }
 
-func (s *ServerStruct) Exec(command string) error {
-	env, err := s.Environment()
+// Execute a command in a running server environment.
+func (s *ServerStruct) Exec(c string) error {
+	e, err := s.Environment()
 	if err != nil {
 		return err
 	}
-	return env.Exec(command)
+
+	return e.Exec(c)
 }
 
+// Rebuild a server.
 func (s *ServerStruct) Rebuild() error {
-	env, err := s.Environment()
+	e, err := s.Environment()
 	if err != nil {
 		return err
 	}
-	return env.ReCreate()
+
+	return e.ReCreate()
 }
 
-// Service returns the server's service configuration
+// Return the service configuration for a server. This will include the
+// environment name, and if relevant, the docker image being used.
 func (s *ServerStruct) Service() *Service {
 	if s.service == nil {
-		// TODO: Properly use the correct service, mock for now.
+		// TODO: use the correct service, mock for now.
 		s.service = &Service{
 			DockerImage:     "quay.io/pterodactyl/core:java",
 			EnvironmentName: "docker",
 		}
 	}
+
 	return s.service
 }
 
-// UUIDShort returns the first block of the UUID
+// Return the first chunk of the server UUID.
 func (s *ServerStruct) UUIDShort() string {
 	return s.ID[0:strings.Index(s.ID, "-")]
 }
 
-// Environment returns the servers environment
+// Return information about the server environment.
 func (s *ServerStruct) Environment() (Environment, error) {
 	var err error
 	if s.environment == nil {
@@ -285,15 +331,16 @@ func (s *ServerStruct) Environment() (Environment, error) {
 		case "docker":
 			s.environment, err = NewDockerEnvironment(s)
 		default:
-			log.WithField("service", s.ServiceName).Error("Invalid environment name")
-			return nil, errors.New("Invalid environment name")
+			log.WithField("service", s.ServiceName).Error("An invalid environment name was provided for this server. The currently enabled environments are: docker")
+			return nil, errors.New("invalid environment argument was provided, currently accepted are: docker")
 		}
 	}
+
 	return s.environment, err
 }
 
 // HasPermission checks wether a provided token has a specific permission
-// @todo fix this function
+// TODO: fix this function
 func (s *ServerStruct) HasPermission(token string, permission string) bool {
 	return true
 	//for key, perms := range s.Keys {
@@ -309,22 +356,47 @@ func (s *ServerStruct) HasPermission(token string, permission string) bool {
 	//return false
 }
 
+// Save a server configuration by writing it to the disk.
 func (s *ServerStruct) Save() error {
-	if err := storeServerConfiguration(s); err != nil {
-		log.WithField("server", s.ID).WithError(err).Error("Failed to store server configuration.")
+	if err := WriteServerToDisk(s); err != nil {
+		log.WithField("server", s.ID).WithError(err).Error("Unable to write a server configuration to the disk.")
 		return err
 	}
+
 	return nil
 }
 
-func (s *ServerStruct) path() string {
-	return filepath.Join(viper.GetString(config.DataPath), constants.ServersPath, s.ID)
+// Generate a path to the server folder. In most instances this will not return the correct path
+// for writing or modifying files. One should use DataPath(path string) to perform those actions.
+func (s *ServerStruct) Path() string {
+	return filepath.Join(viper.GetString(config.ServerDataPath), s.ID)
 }
 
-func (s *ServerStruct) dataPath() string {
-	return filepath.Join(s.path(), constants.ServerDataPath)
+// Generate a path to the server data folder. By default with no argument this is the path
+// that is mounted into the docker container. If a path is passed it will be normalized
+// to the root server data folder. This prevents a user from providing a path like ../../etc and
+// escaping thier server data directory.
+func (s *ServerStruct) DataPath(p string) string {
+	b := filepath.Join(s.Path(), constants.ServerDataFolder)
+	strip := func(s string) string {
+		return strings.Map(func(r rune) rune {
+			if unicode.IsSpace(r) {
+				return -1
+			}
+			return r
+		}, s)
+	}
+
+	f := filepath.Join(b, strip(p))
+	if !strings.HasPrefix(f, s.Path()) {
+		return b
+	}
+
+	return f
 }
 
-func (s *ServerStruct) configFilePath() string {
-	return filepath.Join(s.path(), constants.ServerConfigFile)
+// Returns the path to the server configuration YAML file. This path is different than Path() as
+// it refers to a completely different part of the filesystem and is not mounted into a docker container.
+func (s *ServerStruct) ConfigPath() string {
+	return filepath.Join(viper.GetString(config.DataPath), s.ID, constants.ServerConfigFile)
 }

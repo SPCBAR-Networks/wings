@@ -111,7 +111,7 @@ func (env *dockerEnvironment) Create() error {
 		return err
 	}
 
-	if err := os.MkdirAll(env.server.dataPath(), constants.DefaultFolderPerms); err != nil {
+	if err := os.MkdirAll(env.server.DataPath(""), constants.DefaultFolderPerms); err != nil {
 		return err
 	}
 
@@ -125,7 +125,7 @@ func (env *dockerEnvironment) Create() error {
 	containerHostConfig := &docker.HostConfig{
 		Memory:     env.server.Settings.Memory,
 		MemorySwap: env.server.Settings.Swap,
-		Binds:      []string{env.server.dataPath() + ":/home/container"},
+		Binds:      []string{env.server.DataPath("") + ":/home/container"},
 	}
 	createContainerOpts := docker.CreateContainerOptions{
 		Name:       "ptdl-" + env.server.UUIDShort(),

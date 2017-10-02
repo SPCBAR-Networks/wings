@@ -6,7 +6,6 @@ import (
 
 	"github.com/spf13/viper"
 
-	"fmt"
 	"github.com/Pterodactyl/wings/api"
 	"github.com/Pterodactyl/wings/config"
 	"github.com/Pterodactyl/wings/constants"
