@@ -3,15 +3,15 @@ package api
 import (
 	"net/http"
 
+	"fmt"
 	"github.com/Pterodactyl/wings/config"
 	"github.com/Pterodactyl/wings/control"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
+	"strings"
 )
 
 const (
-	accessTokenHeader = "X-Access-Token"
-
 	contextVarServer = "server"
 	contextVarAuth   = "auth"
 )
@@ -64,13 +64,23 @@ func (a *authorizationManager) HasPermission(permission string) bool {
 // permission is a permission string describing the required permission to access the route
 func AuthHandler(permission string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		requestToken := c.Request.Header.Get(accessTokenHeader)
+
+		split := strings.Split(c.Request.Header.Get("Authorization"), " ")
+
+		var authorizationToken string = ""
+		if len(split) == 2 {
+			_, authorizationToken = split[0], split[1]
+		}
+
 		requestServer := c.Param("server")
 		var server control.Server
 
-		if requestToken == "" && permission != "" {
+		fmt.Println(requestServer)
+		fmt.Println(authorizationToken)
+
+		if authorizationToken == "" && permission != "" {
 			log.Debug("Token missing in request.")
-			c.JSON(http.StatusBadRequest, responseError{"Missing required " + accessTokenHeader + " header."})
+			c.JSON(http.StatusBadRequest, responseError{"Missing required Authorization header."})
 			c.Abort()
 			return
 		}
@@ -82,7 +92,7 @@ func AuthHandler(permission string) gin.HandlerFunc {
 			}
 		}
 
-		auth := newAuthorizationManager(requestToken, server)
+		auth := newAuthorizationManager(authorizationToken, server)
 
 		if auth.HasPermission(permission) {
 			c.Set(contextVarServer, server)

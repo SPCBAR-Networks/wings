@@ -35,10 +35,10 @@ func (api *InternalAPI) RegisterRoutes() {
 		{
 			v1ServerFileRoutes.GET("/file/:file", AuthHandler("s:files:read"), ReadFileContents)
 			v1ServerFileRoutes.GET("/stat/:file", AuthHandler("s:files:get"), StatFile)
-			v1ServerFileRoutes.GET("/dir/:directory", AuthHandler("s:files:get"), ListDirectory)
+			v1ServerFileRoutes.GET("/directory/:directory", AuthHandler("s:files:get"), ListDirectory)
 			v1ServerFileRoutes.GET("/download/:token", DownloadFile)
 
-			v1ServerFileRoutes.POST("/dir/:directory", AuthHandler("s:files:create"), StoreDirectory)
+			v1ServerFileRoutes.POST("/directory/:directory", AuthHandler("s:files:create"), StoreDirectory)
 			v1ServerFileRoutes.POST("/file/:file", AuthHandler("s:files:post"), WriteFileContents)
 			v1ServerFileRoutes.POST("/copy/:file", AuthHandler("s:files:copy"), CopyFile)
 			v1ServerFileRoutes.POST("/move/:file", AuthHandler("s:files:move"), MoveFile)

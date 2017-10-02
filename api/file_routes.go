@@ -1,13 +1,24 @@
 package api
 
-import "github.com/gin-gonic/gin"
+import (
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
 
 func StoreDirectory(c *gin.Context) {
 
 }
 
 func ListDirectory(c *gin.Context) {
+	server := GetContextServer(c)
+	if server == nil {
+		c.Abort()
+	}
 
+	fmt.Println(server)
+	c.Header("Content-Type", "text/html")
+	c.String(http.StatusOK, "test")
 }
 
 func CopyFile(c *gin.Context) {
