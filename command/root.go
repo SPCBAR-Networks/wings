@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/viper"
 
+	"fmt"
 	"github.com/Pterodactyl/wings/api"
 	"github.com/Pterodactyl/wings/config"
 	"github.com/Pterodactyl/wings/constants"
@@ -53,6 +54,7 @@ func run(cmd *cobra.Command, args []string) {
 	log.Info("Configuration loaded successfully.")
 
 	log.Info("Loading configured servers...")
+
 	if err := control.LoadServerConfigurations(filepath.Join(viper.GetString(config.DataPath), constants.ServersPath)); err != nil {
 		log.WithError(err).Error("Failed to load configured servers.")
 	}

@@ -10,14 +10,14 @@ import (
 
 // GET /servers
 // TODO: make jsonapi compliant
-func handleGetServers(c *gin.Context) {
+func GetServers(c *gin.Context) {
 	servers := control.GetServers()
 	c.JSON(http.StatusOK, servers)
 }
 
 // POST /servers
 // TODO: make jsonapi compliant
-func handlePostServers(c *gin.Context) {
+func StoreServer(c *gin.Context) {
 	server := control.ServerStruct{}
 	if err := c.BindJSON(&server); err != nil {
 		log.WithField("server", server).WithError(err).Error("Failed to parse server request.")
@@ -48,7 +48,7 @@ func handlePostServers(c *gin.Context) {
 
 // GET /servers/:server
 // TODO: make jsonapi compliant
-func handleGetServer(c *gin.Context) {
+func GetServer(c *gin.Context) {
 	id := c.Param("server")
 	server := control.GetServer(id)
 	if server == nil {
@@ -59,13 +59,13 @@ func handleGetServer(c *gin.Context) {
 }
 
 // PATCH /servers/:server
-func handlePatchServer(c *gin.Context) {
+func PatchServer(c *gin.Context) {
 
 }
 
 // DELETE /servers/:server
 // TODO: make jsonapi compliant
-func handleDeleteServer(c *gin.Context) {
+func DeleteServer(c *gin.Context) {
 	id := c.Param("server")
 	server := control.GetServer(id)
 	if server == nil {
@@ -89,21 +89,21 @@ func handleDeleteServer(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func handlePostServerReinstall(c *gin.Context) {
+func ReinstallServer(c *gin.Context) {
 
 }
 
-func handlePostServerPassword(c *gin.Context) {
+func SetServerPassword(c *gin.Context) {
 
 }
 
-func handlePostServerRebuild(c *gin.Context) {
+func RebuildServer(c *gin.Context) {
 
 }
 
 // POST /servers/:server/power
 // TODO: make jsonapi compliant
-func handlePostServerPower(c *gin.Context) {
+func TogglePowerForServer(c *gin.Context) {
 	server := getServerFromContext(c)
 	if server == nil {
 		c.Status(http.StatusNotFound)
@@ -158,20 +158,20 @@ func handlePostServerPower(c *gin.Context) {
 
 // POST /servers/:server/command
 // TODO: make jsonapi compliant
-func handlePostServerCommand(c *gin.Context) {
+func SendCommandToServer(c *gin.Context) {
 	server := getServerFromContext(c)
 	cmd := c.Query("command")
 	server.Exec(cmd)
 }
 
-func handleGetServerLog(c *gin.Context) {
+func GetLogForServer(c *gin.Context) {
 
 }
 
-func handlePostServerSuspend(c *gin.Context) {
+func SuspendServer(c *gin.Context) {
 
 }
 
-func handlePostServerUnsuspend(c *gin.Context) {
+func UnsuspendServer(c *gin.Context) {
 
 }

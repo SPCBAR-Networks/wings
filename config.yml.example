@@ -1,5 +1,7 @@
 debug: false
-data: '/srv/daemon-data'
+paths:
+  config: '/etc/wings/.config'
+  servers: '/srv/wings'
 api:
   host: '0.0.0.0'
   port: 8080

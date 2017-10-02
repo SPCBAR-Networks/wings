@@ -4,9 +4,14 @@ const (
 	// Debug is a boolean value that enables debug mode
 	Debug = "debug"
 
-	// DataPath is a string containing the path where data should
-	// be stored on the system
-	DataPath = "datapath"
+	// DataPath is a string containing the full or relative path to
+	// the location where configuration files for servers are stored.
+	DataPath = "paths.config"
+
+	// ServerDataPath is a string containing the full or relative path to
+	// the location that contains all of the server files to be mounted
+	// into docker containers.
+	ServerDataPath = "paths.servers"
 
 	// APIHost is a string containing the interface ip address
 	// on what the api should listen on

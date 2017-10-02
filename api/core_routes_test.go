@@ -15,19 +15,19 @@ func TestHandleGetIndex(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/", nil)
 
-	router.GET("/", handleGetIndex)
+	router.GET("/", GetIndex)
 	router.ServeHTTP(recorder, req)
 
 	assert.Equal(t, http.StatusOK, recorder.Code)
 }
 
-func TestHandlePatchConfig(t *testing.T) {
+func TestPatchConfig(t *testing.T) {
 	router := gin.New()
 	recorder := httptest.NewRecorder()
 
 	req, _ := http.NewRequest("PATCH", "/", strings.NewReader("{}"))
 
-	router.PATCH("/", handlePatchConfig)
+	router.PATCH("/", PatchConfig)
 	router.ServeHTTP(recorder, req)
 
 	assert.Equal(t, http.StatusOK, recorder.Code)

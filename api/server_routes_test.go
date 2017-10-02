@@ -13,11 +13,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHandleGetServers(t *testing.T) {
+func TestGetServers(t *testing.T) {
 	router := gin.New()
 	req, _ := http.NewRequest("GET", "/servers", nil)
 
-	router.GET("/servers", handleGetServers)
+	router.GET("/servers", GetServers)
 
 	t.Run("returns an empty json array when no servers are configured", func(t *testing.T) {
 		rec := httptest.NewRecorder()
@@ -44,9 +44,9 @@ func TestHandlePostServer(t *testing.T) {
 	// This will also vary depending on the Environment the server runs in
 }
 
-func TestHandleGetServer(t *testing.T) {
+func TestGetServer(t *testing.T) {
 	router := gin.New()
-	router.GET("/servers/:server", handleGetServer)
+	router.GET("/servers/:server", GetServer)
 
 	control.CreateServer(&testServer)
 
@@ -65,13 +65,13 @@ func TestHandleGetServer(t *testing.T) {
 	})
 }
 
-func TestHandlePatchServer(t *testing.T) {
+func TestPatchServer(t *testing.T) {
 
 }
 
-func TestHandleDeleteServer(t *testing.T) {
+func TestDeleteServer(t *testing.T) {
 	router := gin.New()
-	router.DELETE("/servers/:server", handleDeleteServer)
+	router.DELETE("/servers/:server", DeleteServer)
 
 	control.CreateServer(&testServer)
 

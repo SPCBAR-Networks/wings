@@ -6,26 +6,26 @@ func (api *InternalAPI) RegisterRoutes() {
 	v1 := api.router.Group("/v1")
 	{
 		v1.GET("/", AuthHandler(""), GetIndex)
-		v1.GET("/servers", AuthHandler("c:list"), handleGetServers)
+		v1.GET("/servers", AuthHandler("c:list"), GetServers)
 
-		v1.PATCH("/config", AuthHandler("c:config"), PatchConfiguration)
-		v1.POST("/servers", AuthHandler("c:create"), handlePostServers)
+		v1.PATCH("/config", AuthHandler("c:config"), PatchConfig)
+		v1.POST("/servers", AuthHandler("c:create"), StoreServer)
 
 		v1ServerRoutes := v1.Group("/servers/:server")
 		{
-			v1ServerRoutes.GET("/", AuthHandler("s:get"), handleGetServer)
-			v1ServerRoutes.GET("/log", AuthHandler("s:console"), handleGetServerLog)
+			v1ServerRoutes.GET("/", AuthHandler("s:get"), GetServer)
+			v1ServerRoutes.GET("/log", AuthHandler("s:console"), GetLogForServer)
 
-			v1ServerRoutes.POST("/reinstall", AuthHandler("s:install-server"), handlePostServerReinstall)
-			v1ServerRoutes.POST("/rebuild", AuthHandler("g:server:rebuild"), handlePostServerRebuild)
-			v1ServerRoutes.POST("/password", AuthHandler(""), handlePostServerPassword)
-			v1ServerRoutes.POST("/power", AuthHandler("s:power"), handlePostServerPower)
-			v1ServerRoutes.POST("/command", AuthHandler("s:command"), handlePostServerCommand)
-			v1ServerRoutes.POST("/suspend", AuthHandler(""), handlePostServerSuspend)
-			v1ServerRoutes.POST("/unsuspend", AuthHandler(""), handlePostServerUnsuspend)
+			v1ServerRoutes.POST("/reinstall", AuthHandler("s:install-server"), ReinstallServer)
+			v1ServerRoutes.POST("/rebuild", AuthHandler("g:server:rebuild"), RebuildServer)
+			v1ServerRoutes.POST("/password", AuthHandler(""), SetServerPassword)
+			v1ServerRoutes.POST("/power", AuthHandler("s:power"), TogglePowerForServer)
+			v1ServerRoutes.POST("/command", AuthHandler("s:command"), SendCommandToServer)
+			v1ServerRoutes.POST("/suspend", AuthHandler(""), SuspendServer)
+			v1ServerRoutes.POST("/unsuspend", AuthHandler(""), UnsuspendServer)
 
-			v1ServerRoutes.PATCH("/", AuthHandler("s:config"), handlePatchServer)
-			v1ServerRoutes.DELETE("/", AuthHandler("g:server:delete"), handleDeleteServer)
+			v1ServerRoutes.PATCH("/", AuthHandler("s:config"), PatchServer)
+			v1ServerRoutes.DELETE("/", AuthHandler("g:server:delete"), DeleteServer)
 		}
 
 		v1ServerFileRoutes := v1.Group("/servers/:server/files")
