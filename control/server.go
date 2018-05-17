@@ -171,7 +171,7 @@ func (s *ServerStruct) init() error {
 			s.environment, err = NewDockerEnvironment(s)
 		default:
 			log.WithField("service", s.ServiceName).Error("Invalid environment name")
-			return errors.New("Invalid environment name")
+			return errors.New("invalid environment name")
 		}
 	}
 	return err

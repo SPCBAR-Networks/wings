@@ -48,19 +48,30 @@ func NewDockerEnvironment(server *ServerStruct) (Environment, error) {
 	}
 
 	if env.server.DockerContainer.ID != "" {
-		if err := env.inspectContainer(ctx); err != nil {
+		if r, err := env.inspectContainer(ctx); err != nil {
 			log.WithError(err).Error("Failed to find the container with stored id, removing id.")
 			env.server.DockerContainer.ID = ""
 			env.server.Save()
+		} else if r {
+			if err = env.attach(); err != nil {
+				log.WithError(err).Error("Failed to attach to the container.")
+			} else {
+				log.Debug("Attached to existing docker container.")
+			}
 		}
 	}
 
 	return &env, nil
 }
 
-func (env *dockerEnvironment) inspectContainer(ctx context.Context) error {
-	_, err := env.client.ContainerInspect(ctx, env.server.DockerContainer.ID)
-	return err
+func (env *dockerEnvironment) inspectContainer(ctx context.Context) (running bool, err error) {
+	running = false
+	i, err := env.client.ContainerInspect(ctx, env.server.DockerContainer.ID)
+	if err != nil {
+		return
+	}
+	running = i.State.Running
+	return
 }
 
 func (env *dockerEnvironment) attach() error {
@@ -140,13 +151,13 @@ func (env *dockerEnvironment) Create() error {
 
 	containerHostConfig.Memory = 0
 
-	container, err := env.client.ContainerCreate(ctx, containerConfig, containerHostConfig, nil, constants.DockerContainerPrefix+env.server.UUIDShort())
+	c, err := env.client.ContainerCreate(ctx, containerConfig, containerHostConfig, nil, constants.DockerContainerPrefix+env.server.UUIDShort())
 	if err != nil {
 		log.WithError(err).WithField("server", env.server.ID).Error("Failed to create docker container")
 		return err
 	}
 
-	env.server.DockerContainer.ID = container.ID
+	env.server.DockerContainer.ID = c.ID
 	env.server.Save()
 
 	log.WithField("server", env.server.ID).Debug("Docker environment created")
@@ -159,7 +170,7 @@ func (env *dockerEnvironment) Destroy() error {
 
 	ctx := context.TODO()
 
-	if err := env.inspectContainer(ctx); err != nil {
+	if _, err := env.inspectContainer(ctx); err != nil {
 		log.WithError(err).Debug("Container not found error")
 		log.WithField("server", env.server.ID).Debug("Container not found, docker environment destroyed already.")
 		return nil
@@ -175,7 +186,7 @@ func (env *dockerEnvironment) Destroy() error {
 }
 
 func (env *dockerEnvironment) Exists() bool {
-	if err := env.inspectContainer(context.TODO()); err != nil {
+	if _, err := env.inspectContainer(context.TODO()); err != nil {
 		return false
 	}
 	return true
