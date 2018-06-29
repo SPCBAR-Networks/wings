@@ -106,7 +106,7 @@ func (env *dockerEnvironment) Create() error {
 	ctx := context.TODO()
 
 	if err := env.pullImage(ctx); err != nil {
-		log.WithError(err).WithField("image", env.server.GetService().DockerImage).WithField("server", env.server.ID).Error("Failed to pull docker image.")
+		log.WithError(err).WithField("image", env.server.GetEgg().DockerImage).WithField("server", env.server.ID).Error("Failed to pull docker image.")
 		return err
 	}
 
@@ -118,7 +118,7 @@ func (env *dockerEnvironment) Create() error {
 	// TODO: apply cpu, io, disk limits.
 
 	containerConfig := &container.Config{
-		Image:        env.server.GetService().DockerImage,
+		Image:        env.server.GetEgg().DockerImage,
 		Cmd:          strings.Split(env.server.StartupCommand, " "),
 		AttachStdin:  true,
 		OpenStdin:    true,
@@ -227,16 +227,16 @@ func (env *dockerEnvironment) Exec(command string) error {
 
 func (env *dockerEnvironment) pullImage(ctx context.Context) error {
 	// Split image repository and tag
-	//imageParts := strings.Split(env.server.GetService().DockerImage, ":")
+	//imageParts := strings.Split(env.server.GetEgg().DockerImage, ":")
 	//imageRepoParts := strings.Split(imageParts[0], "/")
 	//if len(imageRepoParts) >= 3 {
 	// TODO: Handle possibly required authentication
 	//}
 
 	// Pull docker image
-	log.WithField("image", env.server.GetService().DockerImage).Debug("Pulling docker image")
+	log.WithField("image", env.server.GetEgg().DockerImage).Debug("Pulling docker image")
 
-	rc, err := env.client.ImagePull(ctx, env.server.GetService().DockerImage, types.ImagePullOptions{})
+	rc, err := env.client.ImagePull(ctx, env.server.GetEgg().DockerImage, types.ImagePullOptions{})
 	if err != nil {
 		return err
 	}

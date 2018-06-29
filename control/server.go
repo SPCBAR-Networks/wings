@@ -42,15 +42,15 @@ type Server interface {
 	HasPermission(string, string) bool
 }
 
-// ServerStruct is a single instance of a Service managed by the panel
+// ServerStruct is a single instance of a Egg managed by the panel
 type ServerStruct struct {
 	// ID is the unique identifier of the server
 	ID string `json:"uuid" jsonapi:"primary,server"`
 
-	// ServiceName is the name of the service. It is mainly used to allow storing the service
+	// EggUuid is the name of the egg. It is mainly used to allow storing the egg
 	// in the config
-	ServiceName string   `json:"serviceName"`
-	Service     *Service `json:"-" jsonapi:"relation,service"`
+	EggUuid     string `json:"eggUuid"`
+	Egg         *Egg   `json:"-" jsonapi:"relation,egg"`
 	environment Environment
 
 	// StartupCommand is the command executed in the environment to start the server
@@ -154,8 +154,8 @@ func DeleteServer(id string) error {
 }
 
 func (s *ServerStruct) init() error {
-	// TODO: Properly use the correct service, mock for now.
-	s.Service = &Service{
+	// TODO: Properly use the correct egg, mock for now.
+	s.Egg = &Egg{
 		DockerImage:     "quay.io/pterodactyl/core:java",
 		EnvironmentName: "docker",
 	}
@@ -166,11 +166,11 @@ func (s *ServerStruct) init() error {
 
 	var err error
 	if s.environment == nil {
-		switch s.GetService().EnvironmentName {
+		switch s.GetEgg().EnvironmentName {
 		case "docker":
 			s.environment, err = NewDockerEnvironment(s)
 		default:
-			log.WithField("service", s.ServiceName).Error("Invalid environment name")
+			log.WithField("egg", s.EggUuid).Error("Invalid environment name")
 			return errors.New("Invalid environment name")
 		}
 	}

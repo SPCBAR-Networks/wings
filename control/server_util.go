@@ -14,9 +14,9 @@ func (s *ServerStruct) SetStatus(st Status) {
 	}
 }
 
-// Service returns the server's service configuration
-func (s *ServerStruct) GetService() *Service {
-	return s.Service
+// Egg returns the server's service configuration
+func (s *ServerStruct) GetEgg() *Egg {
+	return s.Egg
 }
 
 // UUIDShort returns the first block of the UUID

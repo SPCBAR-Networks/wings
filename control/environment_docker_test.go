@@ -18,7 +18,7 @@ func testServer() *ServerStruct {
 	viper.SetDefault(config.DataPath, "./test_data")
 	return &ServerStruct{
 		ID: "testuuid-something-something",
-		Service: &Service{
+		Egg: &Egg{
 			DockerImage: "alpine:latest",
 		},
 		StartupCommand: "/bin/ash echo hello && sleep 100",
